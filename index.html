@@ -1,0 +1,2459 @@
+<title>Mix Up Mocktails</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Anton&family=Yellowtail&display=swap">
+<style>
+  /* ---------- Design tokens (from brief §2) ---------- */
+  :root {
+    color-scheme: light;
+    --bg: #F8F8F8;
+    --surface: #FFFFFF;
+    --navy: #0B1F5C;
+    --navy-hover: #081640;
+    --navy-tint: rgba(11, 31, 92, 0.07);
+    --text-primary: #121212;
+    --text-secondary: #555555;
+    --white: #FFFFFF;
+    --badge-bg: #121212;
+    --badge-text: #FFFFFF;
+    --border: #121212;
+    --placeholder: #E5E5E5;
+    --placeholder-ink: #8A8A8A;
+    --rule: rgba(18, 18, 18, 0.08);
+    --disabled: #9A9A9A;
+    --error: #B3261E;
+    --error-bg: #FCEDEC;
+    --success: #1F6F43;
+    --success-bg: #E8F3EC;
+    --hero-ink: #FFFFFF;
+    --hero-script: #F7C4CB; /* the blush dot behind the logo on our labels */
+
+    --font: "Helvetica Neue", Helvetica, "Assistant", Arial, sans-serif;
+    --radius-img: 12px;
+    --radius-panel: 16px;
+    --radius-pill: 999px;
+    --page-max: 1200px;
+    --gutter: clamp(16px, 4vw, 50px);
+    --section-gap: clamp(56px, 7vw, 80px);
+    --card-gap: 16px;
+    --header-h: 90px;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
+  html:has(dialog[open]) { overflow: hidden; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  button, input, select, textarea { font: inherit; }
+  :focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+  [tabindex="-1"]:focus { outline: none; }
+  [id] { scroll-margin-top: calc(var(--header-h) + 16px); }
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .page-width {
+    max-width: calc(var(--page-max) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .skip-link {
+    position: absolute;
+    left: 16px; top: -80px;
+    z-index: 50;
+    padding: 10px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--navy);
+    color: var(--white);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 12px; }
+  .eyebrow {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+  .muted { margin: 0; color: var(--text-secondary); }
+
+  /* ---------- Header (§3.1) ---------- */
+  .header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: var(--bg);
+    border-bottom: 1px solid var(--rule);
+  }
+  .header__inner {
+    height: var(--header-h);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+  }
+  .header__group { display: flex; align-items: center; gap: 4px; }
+  .header__group--right { justify-content: flex-end; }
+  .icon-btn {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 44px; height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .icon-btn svg { width: 22px; height: 22px; transition: transform .15s ease; }
+  .icon-btn:hover svg { transform: scale(1.07); }
+  .cart-count {
+    position: absolute;
+    right: 4px; bottom: 6px;
+    min-width: 17px; height: 17px;
+    padding: 0 4px;
+    border-radius: var(--radius-pill);
+    background: var(--navy);
+    color: var(--white);
+    font-size: 10px;
+    line-height: 17px;
+    font-weight: 700;
+    text-align: center;
+  }
+  /* Small dot on the profile icon once someone is logged in */
+  .icon-btn.is-signed-in::after {
+    content: "";
+    position: absolute;
+    right: 9px; bottom: 9px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--navy);
+    box-shadow: 0 0 0 2px var(--bg);
+  }
+  .logo { display: block; line-height: 0; }
+  .logo img {
+    height: 44px;
+    width: auto;
+    mix-blend-mode: multiply; /* supplied PNG has a white ground */
+  }
+
+  /* Search */
+  .search { border-top: 1px solid var(--rule); padding-block: 16px; }
+  .search__form { display: flex; gap: 12px; align-items: center; }
+  .search__form .input { flex: 1; min-width: 0; }
+  .search__results { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; max-width: 640px; }
+  .search__result {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px;
+    border-radius: var(--radius-img);
+    text-decoration: none;
+  }
+  .search__result:hover { background: var(--navy-tint); }
+  .search__result img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; }
+  .search__result span { display: grid; font-size: 14px; }
+  .search__result small { font-size: 13px; letter-spacing: .05em; color: var(--text-secondary); }
+  .search__empty { margin: 12px 0 0; font-size: 14px; color: var(--text-secondary); }
+
+  /* ---------- Drawers and dialogs ---------- */
+  dialog { color: var(--text-primary); }
+  dialog::backdrop { background: rgba(18, 18, 18, .35); }
+  .sheet {
+    position: fixed;
+    inset-block: 0;
+    width: min(400px, 100vw);
+    max-width: 100vw;
+    height: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--bg);
+  }
+  .sheet--left { inset-inline: 0 auto; }
+  .sheet--right { inset-inline: auto 0; width: min(440px, 100vw); }
+  .sheet--left[open] { animation: from-left .28s cubic-bezier(.2, .7, .2, 1); }
+  .sheet--right[open] { animation: from-right .28s cubic-bezier(.2, .7, .2, 1); }
+  .sheet__inner {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px);
+    overflow-y: auto;
+  }
+  .sheet__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .sheet__head img { height: 32px; width: auto; mix-blend-mode: multiply; }
+  .sheet__title { margin: 0; font-size: 20px; font-weight: 600; }
+  .menu-nav ul { list-style: none; margin: 0; padding: 0; }
+  .menu-nav a {
+    display: block;
+    padding-block: 12px;
+    font-size: 18px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+  }
+  .menu-nav a:hover { color: var(--navy); }
+  .menu-nav .menu-nav__secondary { margin-top: 24px; }
+  .menu-nav__secondary a { padding-block: 8px; font-size: 15px; color: var(--text-secondary); border-bottom: 0; }
+  .modal {
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100% - 32px);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+  }
+  .modal[open] { animation: pop-in .2s ease-out; }
+  .modal__inner { display: grid; gap: 18px; padding: clamp(20px, 5vw, 28px); }
+  .modal__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .modal__head .icon-btn { margin: -8px -10px 0 0; }
+  .modal__title { margin: 4px 0 0; font-size: 22px; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+  @keyframes from-left { from { transform: translateX(-100%); } }
+  @keyframes from-right { from { transform: translateX(100%); } }
+  @keyframes pop-in { from { opacity: 0; transform: translateY(8px); } }
+
+  /* ---------- Placeholders (§4) ---------- */
+  .ph {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px;
+    padding: 16px;
+    background: var(--placeholder);
+    color: var(--placeholder-ink);
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .ph__id { font-weight: 700; color: #6E6E6E; font-size: 13px; }
+
+  /* ---------- Hero (§3.2) ---------- */
+  .hero {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    overflow: hidden;
+    background: var(--placeholder);
+    text-decoration: none;
+    color: var(--hero-ink);
+  }
+  .hero__img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+  }
+  /* Warm scrim so the headline reads over the bottles */
+  .hero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 62% 58% at 50% 48%, rgba(38, 20, 12, .52), rgba(38, 20, 12, .16));
+  }
+  .hero__headline {
+    position: absolute;
+    z-index: 1;
+    left: 50%; top: 48%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 0 2px 28px rgba(0, 0, 0, .35);
+  }
+  .hero__script {
+    display: block;
+    font-family: "Yellowtail", "Brush Script MT", cursive;
+    font-size: clamp(64px, 11vw, 190px);
+    line-height: .8;
+    color: var(--hero-script);
+    position: relative;
+    z-index: 1;
+    transform: rotate(-6deg) translateX(-18%);
+  }
+  .hero__bold {
+    display: block;
+    font-family: "Anton", "Impact", "Helvetica Neue", sans-serif;
+    font-size: clamp(36px, 6.4vw, 118px);
+    line-height: .95;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+    margin-top: -.12em;
+  }
+
+  /* ---------- Sections (§3.3–3.5) ---------- */
+  .section { padding-top: var(--section-gap); }
+  .section:last-of-type { padding-bottom: var(--section-gap); }
+  .section__head { text-align: center; margin-bottom: 36px; }
+  .section__title {
+    margin: 0;
+    font-size: clamp(24px, 2.4vw, 30px);
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  .section__subtitle {
+    margin: 8px 0 0;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Product card (§3.6) ---------- */
+  .card {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    min-width: 0;
+  }
+  .card__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    border-radius: var(--radius-img);
+    overflow: hidden;
+    background: var(--placeholder);
+    text-decoration: none;
+  }
+  .card__media .ph,
+  .card__media img {
+    transition: transform .5s cubic-bezier(.2,.6,.2,1), opacity .4s ease;
+  }
+  .card__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .card__img--hover { opacity: 0; }
+  @media (hover: hover) {
+    .card:hover .card__media .ph,
+    .card:hover .card__media img { transform: scale(1.03); }
+    .card:hover .card__img--hover { opacity: 1; }
+  }
+  .badge {
+    position: absolute;
+    left: 12px; bottom: 12px;
+    z-index: 1;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .card__info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 6px;
+    padding-top: 16px;
+  }
+  .card__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+  .card__title a { text-decoration: none; }
+  .card__title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .card__sub {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+  .card__price {
+    margin: 0;
+    font-size: 13px;
+    letter-spacing: .05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .card__actions { display: grid; gap: 8px; margin-top: auto; padding-top: 12px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 48px;
+    padding: 0 24px;
+    border: 1px solid var(--navy);
+    border-radius: var(--radius-pill);
+    background: var(--navy);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .btn:hover { background: var(--navy-hover); border-color: var(--navy-hover); }
+  .btn--outline { background: transparent; color: var(--navy); }
+  .btn--outline:hover { background: var(--navy-tint); border-color: var(--navy); }
+  .btn:disabled { background: var(--disabled); border-color: var(--disabled); color: var(--white); cursor: not-allowed; }
+  .btn--outline:disabled { background: transparent; color: var(--disabled); }
+  .btn[aria-busy="true"] { cursor: progress; opacity: .85; }
+  .btn--auto { width: auto; min-width: 200px; }
+  .btn__icon { width: 16px; height: 16px; flex: none; }
+  .link-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .link-btn:hover { color: var(--text-primary); }
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    flex: none;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -3px;
+    animation: spin .7s linear infinite;
+  }
+  .icon-btn .spinner { width: 18px; height: 18px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Quantity stepper */
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+  }
+  .qty button {
+    display: grid;
+    place-items: center;
+    width: 40px; height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--text-primary);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .qty button:disabled { color: #B5B5B5; cursor: default; }
+  .qty input {
+    width: 36px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+  }
+  .qty input::-webkit-inner-spin-button,
+  .qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .qty--small { height: 36px; }
+  .qty--small button { width: 32px; font-size: 16px; }
+
+  /* ---------- Carousel ---------- */
+  .slider {
+    --visible: 3.5;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% + var(--gutter) - var(--card-gap) * (var(--visible) - .5)) / var(--visible));
+    gap: var(--card-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    padding-inline: var(--gutter);
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    cursor: grab;
+  }
+  .slider::-webkit-scrollbar { display: none; }
+  .slider > .card { scroll-snap-align: start; }
+  .slider.is-dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+  .slider.is-dragging .card { pointer-events: none; }
+  .slider-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .slider-controls .icon-btn svg { width: 18px; height: 18px; }
+  .slider-controls .icon-btn:disabled { opacity: .3; cursor: default; }
+
+  /* ---------- Grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px var(--card-gap);
+  }
+
+  /* ---------- Product page ---------- */
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 24px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
+  .crumbs [aria-current] { color: var(--text-primary); }
+  .pdp {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 64px);
+    align-items: start;
+    padding-top: 24px;
+  }
+  .pdp__main {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    border-radius: var(--radius-img);
+    overflow: hidden;
+    background: var(--placeholder);
+  }
+  .pdp__main img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .pdp__thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .pdp__thumb {
+    width: 72px; height: 72px;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--placeholder);
+    cursor: pointer;
+  }
+  .pdp__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .pdp__thumb[aria-pressed="true"] { border-color: var(--navy); }
+  .pdp__info {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pdp__title { margin: 0; font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+  .pdp__price { margin: 0; font-size: 18px; letter-spacing: .05em; font-variant-numeric: tabular-nums; }
+  .pdp__buy { display: grid; gap: 10px; max-width: 440px; margin-top: 8px; }
+  .pdp__buy .field { margin-bottom: 6px; }
+  .pdp__note { margin: 0; font-size: 13px; color: var(--text-secondary); }
+  .pdp__details { max-width: 60ch; margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--rule); }
+  .pdp__details h2 { margin: 18px 0 6px; font-size: 16px; font-weight: 600; }
+  .pdp__details p { margin: 0; color: var(--text-secondary); }
+
+  /* ---------- Forms ---------- */
+  .panel { background: var(--surface); border-radius: var(--radius-panel); padding: clamp(20px, 4vw, 40px); }
+  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+  .span-2 { grid-column: 1 / -1; }
+  .field { display: grid; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .field label,
+  .field legend { padding: 0; font-size: 14px; font-weight: 600; }
+  .field legend { margin-bottom: 6px; }
+  .opt { font-weight: 400; color: var(--text-secondary); }
+  .input {
+    width: 100%;
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 15px;
+  }
+  .input::placeholder { color: var(--placeholder-ink); }
+  textarea.input {
+    height: auto;
+    min-height: 132px;
+    padding: 14px 20px;
+    border-radius: 20px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  select.input {
+    appearance: none;
+    padding-right: 48px;
+    background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23121212' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 20px center / 16px;
+    cursor: pointer;
+  }
+  .input[aria-invalid="true"] { border-color: var(--error); box-shadow: inset 0 0 0 1px var(--error); }
+  .field__hint { margin: 0; font-size: 13px; color: var(--text-secondary); }
+  .field__error { margin: 0; font-size: 13px; color: var(--error); }
+  .form-alert {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: var(--radius-img);
+    background: var(--error-bg);
+    color: var(--error);
+    font-size: 14px;
+  }
+  .form-alert--info { display: grid; gap: 6px; background: var(--navy-tint); color: var(--text-primary); }
+  .form-alert--info .btn { margin-top: 6px; }
+  .notice {
+    margin: 0;
+    padding: 12px 16px;
+    border-radius: var(--radius-img);
+    background: var(--success-bg);
+    color: var(--success);
+    font-size: 14px;
+  }
+  .form-success { display: grid; justify-items: center; gap: 10px; padding-block: 16px; text-align: center; }
+  .form-success svg { width: 48px; height: 48px; color: var(--success); }
+  .form-success h2,
+  .form-success h3 { margin: 0; font-size: 22px; font-weight: 600; }
+  .form-success p { margin: 0; max-width: 46ch; color: var(--text-secondary); }
+  .form-success .btn { margin-top: 8px; }
+
+  /* Star rating */
+  .stars { position: relative; display: flex; align-items: center; gap: 2px; min-height: 48px; }
+  .stars input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+  .stars label { padding: 4px; border-radius: 8px; line-height: 0; cursor: pointer; }
+  .stars svg { width: 28px; height: 28px; fill: none; stroke: var(--text-secondary); stroke-width: 1.5; stroke-linejoin: round; transition: fill .12s ease; }
+  .stars label.is-on svg { fill: var(--navy); stroke: var(--navy); }
+  .stars input:focus-visible + label { outline: 2px solid var(--navy); outline-offset: 1px; }
+  .stars__readout { margin-left: 8px; font-size: 13px; color: var(--text-secondary); }
+
+  /* ---------- Feedback (every page, above the footer) ---------- */
+  .feedback { padding-block: var(--section-gap); border-top: 1px solid var(--rule); }
+  .feedback__panel { max-width: 760px; margin-inline: auto; }
+
+  /* ---------- Account pages ---------- */
+  .auth { display: grid; justify-items: center; gap: 16px; padding-block: 48px 8px; }
+  .auth__card { display: grid; gap: 20px; width: min(460px, 100%); }
+  .auth__tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--navy-tint);
+  }
+  .auth__tabs a {
+    display: grid;
+    place-items: center;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    color: var(--navy);
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-decoration: none;
+  }
+  .auth__tabs a[aria-current="page"] { background: var(--navy); color: var(--white); }
+  .auth__intro { display: grid; gap: 4px; text-align: center; }
+  .auth__title { margin: 0; font-size: clamp(26px, 3vw, 32px); font-weight: 600; line-height: 1.2; }
+  .auth__form { display: grid; gap: 16px; }
+  .auth__switch { margin: 0; text-align: center; font-size: 14px; color: var(--text-secondary); }
+  .auth__switch a { color: var(--navy); font-weight: 600; }
+  .auth__note { margin: 0; font-size: 12px; text-align: center; color: var(--text-secondary); }
+  .account { display: grid; gap: 10px; max-width: 720px; padding-block: 48px 8px; }
+  .account__title { margin: 0; font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.2; }
+  .account h2 { margin: 24px 0 4px; font-size: 18px; font-weight: 600; }
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .order { display: grid; gap: 2px; padding: 16px 20px; border-radius: var(--radius-img); background: var(--surface); }
+  .order strong { font-weight: 600; }
+  .order .muted { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .account__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+
+  /* Owner inbox */
+  .inbox { display: grid; gap: 10px; padding-block: 48px 8px; }
+  .inbox > h1 { margin: 0; font-size: clamp(26px, 3vw, 34px); font-weight: 600; }
+  .inbox > .btn { justify-self: start; }
+  .inbox h2 { display: flex; align-items: center; gap: 8px; margin: 28px 0 4px; font-size: 20px; font-weight: 600; }
+  .count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px; height: 26px;
+    padding: 0 8px;
+    border-radius: var(--radius-pill);
+    background: var(--navy-tint);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-img); background: var(--surface); }
+  .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table th,
+  .table td { padding: 12px 16px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  .table th { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); white-space: nowrap; }
+  .table tr:last-child td { border-bottom: 0; }
+  .nowrap { white-space: nowrap; }
+  .num { font-variant-numeric: tabular-nums; }
+  .table__msg { min-width: 240px; max-width: 420px; white-space: pre-wrap; }
+
+  /* ---------- Cart drawer ---------- */
+  .sheet__inner--cart { overflow: hidden; }
+  .cart-head { display: grid; gap: 4px; }
+  .cart-notice { margin: 0; font-size: 13px; color: var(--text-secondary); }
+  .cart-body { flex: 1; min-height: 0; overflow-y: auto; margin-inline: -4px; padding-inline: 4px; }
+  .cart-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+  .cart-line { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+  .cart-line__img {
+    display: block;
+    width: 76px;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--placeholder);
+  }
+  .cart-line__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .cart-line__name { font-size: 14px; line-height: 1.35; text-decoration: none; }
+  .cart-line__name:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .cart-line__unit { margin: 2px 0 10px; font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .cart-line__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .cart-line__total { margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cart-empty {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 8px;
+    min-height: 100%;
+    padding-block: 40px;
+    text-align: center;
+  }
+  .cart-empty svg { width: 44px; height: 44px; color: var(--text-secondary); }
+  .cart-empty__title { margin: 0; font-size: 18px; font-weight: 600; }
+  .cart-empty p { margin: 0; color: var(--text-secondary); }
+  .cart-empty .btn { margin-top: 12px; }
+  .cart-foot { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--rule); }
+  .cart-foot__row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cart-foot__note { margin: -6px 0 0; font-size: 13px; color: var(--text-secondary); }
+  .cart-foot .link-btn { justify-self: center; }
+
+  /* ---------- Pre-order dialog ---------- */
+  .po-form { display: grid; gap: 18px; }
+  .po-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .po-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+  .po-item img { display: block; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+  .po-item__name { margin: 0; font-size: 14px; line-height: 1.35; }
+  .po-item__meta { margin: 0; font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .po-item__total { margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .po-total { display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--rule); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .po-note { margin: 0; padding: 12px 16px; border-radius: var(--radius-img); background: var(--navy-tint); font-size: 13px; }
+
+  /* ---------- Footer (§3.7) ---------- */
+  .footer {
+    border-top: 1px solid var(--rule);
+    padding-block: 56px 32px;
+  }
+  .footer__top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 32px;
+  }
+  .footer__logo img { width: 180px; height: auto; mix-blend-mode: multiply; }
+  .footer h2 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .footer ul a {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .footer ul a:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
+  .footer__bottom { margin-top: 48px; }
+  .newsletter__label { display: block; margin-bottom: 12px; font-size: 18px; font-weight: 600; }
+  .newsletter__field { position: relative; width: min(320px, 100%); }
+  .newsletter__field input {
+    width: 100%;
+    height: 46px;
+    padding: 0 52px 0 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+  .newsletter__field input[aria-invalid="true"] { border-color: var(--error); box-shadow: inset 0 0 0 1px var(--error); }
+  .newsletter__field button {
+    position: absolute;
+    right: 3px; top: 1px;
+  }
+  .newsletter__field button svg { width: 18px; height: 18px; }
+  .newsletter__msg { margin: 10px 0 0; font-size: 13px; color: var(--text-secondary); min-height: 1.4em; }
+  .newsletter__msg.is-error { color: var(--error); }
+  .footer__legal {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Responsive (§5) ---------- */
+  @media (max-width: 989px) {
+    .slider { --visible: 2.5; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .footer__top { grid-template-columns: 1fr 1fr; }
+    .footer__logo { grid-column: 1 / -1; }
+  }
+  @media (max-width: 749px) {
+    :root { --header-h: 68px; }
+    .logo img { height: 32px; }
+    .icon-btn { width: 38px; height: 38px; }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .icon-btn.is-signed-in::after { right: 6px; bottom: 6px; }
+    .hero { aspect-ratio: 4 / 5; }
+    .hero__img { object-position: 55% 50%; }
+    .hero__headline { top: 46%; }
+    .hero__script { font-size: 26vw; transform: rotate(-6deg) translateX(-12%); }
+    .hero__bold { font-size: 12vw; }
+    .slider { --visible: 1.3; }
+    .grid { gap: 28px 12px; }
+    .btn { height: 44px; padding: 0 12px; font-size: 14px; }
+    .btn--auto { width: 100%; }
+    .pdp { grid-template-columns: 1fr; }
+    .pdp__info { position: static; }
+    .form-grid { grid-template-columns: 1fr; }
+    .footer__top { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ HEADER ============ -->
+<header class="header">
+  <div class="page-width header__inner">
+    <div class="header__group">
+      <button class="icon-btn" id="menu-open" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-controls="menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <button class="icon-btn" id="search-toggle" type="button" aria-label="Search" aria-controls="search" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+      </button>
+    </div>
+    <a class="logo" href="#home" aria-label="Mix Up Mocktails home">
+      <img src="assets/logo.png" alt="Mix Up Mocktails" width="720" height="217">
+    </a>
+    <div class="header__group header__group--right">
+      <a class="icon-btn" id="account-link" href="#account" aria-label="Log in or sign up">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c1.4-3.8 4.4-5.5 8-5.5s6.6 1.7 8 5.5"/></svg>
+      </a>
+      <button class="icon-btn" id="cart-open" type="button" aria-label="Cart, empty" aria-haspopup="dialog" aria-controls="cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12.5H6L5 8Z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10" stroke-linecap="round"/></svg>
+        <span class="cart-count" id="cart-count" aria-hidden="true" hidden>0</span>
+      </button>
+    </div>
+  </div>
+  <div class="search" id="search" hidden>
+    <div class="page-width">
+      <form class="search__form" id="search-form" role="search">
+        <label for="search-input" class="visually-hidden">Search flavours</label>
+        <input class="input" id="search-input" type="search" placeholder="Search flavours" autocomplete="off">
+        <button class="icon-btn" id="search-close" type="button" aria-label="Close search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </form>
+      <div id="search-results"></div>
+      <p class="visually-hidden" id="search-status" aria-live="polite"></p>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <!-- ============ HOME ============ -->
+  <div class="view" id="view-home">
+    <h1 class="visually-hidden view-title" tabindex="-1">Mix Up Mocktails</h1>
+
+    <a class="hero" href="#mocktail-mixers" aria-label="Party starts with Mix Up. Shop Mocktail Mixers">
+      <img class="hero__img" src="assets/hero-flatlay.jpg" alt="" width="1600" height="900" fetchpriority="high">
+      <div class="hero__headline" aria-hidden="true">
+        <span class="hero__script">Party</span>
+        <span class="hero__bold">Starts with Mix&nbsp;Up</span>
+      </div>
+    </a>
+
+    <section class="section" id="mocktail-mixers" aria-labelledby="mm-title">
+      <div class="page-width section__head">
+        <h2 class="section__title" id="mm-title">Mocktail Mixers</h2>
+        <p class="section__subtitle">Perfect mix for your house party</p>
+      </div>
+      <div class="slider" id="slider" data-products="lychee-rose,guava-chilli,kala-khatta,passion-fruit,masala-shikanji,mixed-berries"></div>
+      <div class="slider-controls">
+        <button class="icon-btn" id="slider-prev" type="button" aria-label="Previous slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <span id="slider-count" aria-live="polite">1 / 6</span>
+        <button class="icon-btn" id="slider-next" type="button" aria-label="Next slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <section class="section" id="fruity-floral" aria-labelledby="ff-title">
+      <div class="page-width">
+        <div class="section__head">
+          <h2 class="section__title" id="ff-title">Fruity &amp; Floral</h2>
+          <p class="section__subtitle">Light, bright &amp; refreshing</p>
+        </div>
+        <div class="grid" data-products="lychee-rose,passion-fruit,mixed-berries"></div>
+      </div>
+    </section>
+
+    <section class="section" id="desi-twist" aria-labelledby="dt-title">
+      <div class="page-width">
+        <div class="section__head">
+          <h2 class="section__title" id="dt-title">Desi Twist</h2>
+          <p class="section__subtitle">Classic Indian flavours, ready to mix</p>
+        </div>
+        <div class="grid" data-products="guava-chilli,kala-khatta,masala-shikanji"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Product, account and inbox pages render here -->
+  <div class="view" id="view-product" hidden></div>
+  <div class="view" id="view-account" hidden></div>
+  <div class="view" id="view-inbox" hidden></div>
+</main>
+
+<!-- ============ FEEDBACK (every page) ============ -->
+<section class="feedback" id="feedback" aria-labelledby="feedback-title">
+  <div class="page-width">
+    <div class="section__head">
+      <h2 class="section__title" id="feedback-title">Share your feedback</h2>
+      <p class="section__subtitle">Tell us how to mix it better</p>
+    </div>
+    <div class="panel feedback__panel">
+      <form class="form-grid" id="feedback-form" novalidate>
+        <div class="field">
+          <label for="fb-name">Name</label>
+          <input class="input" id="fb-name" type="text" autocomplete="name" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="fb-email">Email</label>
+          <input class="input" id="fb-email" type="email" autocomplete="email" inputmode="email" spellcheck="false" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="fb-type">What's it about?</label>
+          <select class="input" id="fb-type">
+            <option>General feedback</option>
+            <option>A flavour</option>
+            <option>Pre-orders</option>
+            <option>This website</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <fieldset class="field">
+          <legend>Rating <span class="opt">(optional)</span></legend>
+          <div class="stars" id="fb-stars">
+            <input type="radio" name="fb-rating" id="fb-r1" value="1"><label for="fb-r1"><span class="visually-hidden">1 star</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg></label>
+            <input type="radio" name="fb-rating" id="fb-r2" value="2"><label for="fb-r2"><span class="visually-hidden">2 stars</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg></label>
+            <input type="radio" name="fb-rating" id="fb-r3" value="3"><label for="fb-r3"><span class="visually-hidden">3 stars</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg></label>
+            <input type="radio" name="fb-rating" id="fb-r4" value="4"><label for="fb-r4"><span class="visually-hidden">4 stars</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg></label>
+            <input type="radio" name="fb-rating" id="fb-r5" value="5"><label for="fb-r5"><span class="visually-hidden">5 stars</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/></svg></label>
+            <span class="stars__readout" id="fb-rating-readout" aria-hidden="true">Not rated</span>
+          </div>
+        </fieldset>
+        <div class="field span-2">
+          <label for="fb-message">Message</label>
+          <textarea class="input" id="fb-message" rows="5" maxlength="1000" aria-describedby="fb-message-count"></textarea>
+          <p class="field__hint" id="fb-message-count">0 / 1000</p>
+        </div>
+        <p class="form-alert span-2" id="fb-alert" role="alert" hidden></p>
+        <div class="span-2">
+          <button class="btn btn--auto" id="fb-submit" type="submit">Send feedback</button>
+        </div>
+      </form>
+      <div class="form-success" id="fb-success" hidden>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="24" cy="24" r="21"/><path d="m15 24.5 6 6 12-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 id="fb-success-title" tabindex="-1">Feedback sent</h3>
+        <p id="fb-success-text"></p>
+        <button class="btn btn--outline btn--auto" id="fb-again" type="button">Send more feedback</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="page-width">
+    <div class="footer__top">
+      <div class="footer__logo">
+        <img src="assets/logo.png" alt="Mix Up Mocktails" width="720" height="217">
+      </div>
+      <div>
+        <h2>Quick links</h2>
+        <ul>
+          <li><a href="#account">My Account</a></li>
+          <li><a href="#feedback">Contact Us</a></li>
+          <li id="owner-link-item" hidden><a href="#inbox">Store Inbox</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Categories</h2>
+        <ul>
+          <li><a href="#mocktail-mixers">Mocktail Mixers</a></li>
+          <li><a href="#fruity-floral">Fruity &amp; Floral</a></li>
+          <li><a href="#desi-twist">Desi Twist</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <form class="newsletter" id="newsletter" novalidate>
+        <label class="newsletter__label" for="newsletter-email">Subscribe to our emails</label>
+        <div class="newsletter__field">
+          <input id="newsletter-email" type="email" placeholder="Email" autocomplete="email" inputmode="email" spellcheck="false" aria-describedby="newsletter-msg">
+          <button class="icon-btn" id="newsletter-submit" type="submit" aria-label="Subscribe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <p class="newsletter__msg" id="newsletter-msg" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <p class="footer__legal">© 2026, Mix Up Mocktails</p>
+  </div>
+</footer>
+
+<!-- ============ MENU ============ -->
+<dialog class="sheet sheet--left" id="menu" aria-label="Menu">
+  <div class="sheet__inner">
+    <div class="sheet__head">
+      <img src="assets/logo.png" alt="Mix Up Mocktails" width="720" height="217">
+      <button class="icon-btn" type="button" data-close aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <nav class="menu-nav" aria-label="Main">
+      <ul>
+        <li><a href="#mocktail-mixers">Mocktail Mixers</a></li>
+        <li><a href="#fruity-floral">Fruity &amp; Floral</a></li>
+        <li><a href="#desi-twist">Desi Twist</a></li>
+      </ul>
+      <ul class="menu-nav__secondary">
+        <li><a href="#account" id="menu-account">Log in / Sign up</a></li>
+        <li><a href="#feedback">Contact us</a></li>
+      </ul>
+    </nav>
+  </div>
+</dialog>
+
+<!-- ============ CART ============ -->
+<dialog class="sheet sheet--right" id="cart" aria-labelledby="cart-title">
+  <div class="sheet__inner sheet__inner--cart">
+    <div class="cart-head">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="cart-title" tabindex="-1">Your cart <span id="cart-title-count"></span></h2>
+        <button class="icon-btn" type="button" data-close aria-label="Close cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p class="cart-notice" id="cart-notice" role="status"></p>
+    </div>
+    <div class="cart-body" id="cart-body"></div>
+    <div class="cart-foot" id="cart-foot" hidden>
+      <div class="cart-foot__row"><span>Subtotal</span><span id="cart-subtotal">₹ 0.00</span></div>
+      <p class="cart-foot__note">Shipping and taxes are calculated at checkout.</p>
+      <div class="form-alert form-alert--info" id="checkout-msg" role="alert" hidden>
+        <strong>Online checkout isn't available yet.</strong>
+        <span>Your cart is saved on this device. You can reserve these bottles as a pre-order instead. No payment is taken now.</span>
+        <button class="btn btn--outline" id="cart-preorder" type="button">Pre-order these items</button>
+      </div>
+      <button class="btn" id="checkout-btn" type="button">Check out</button>
+      <button class="link-btn" type="button" data-close>Continue shopping</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ PRE-ORDER ============ -->
+<dialog class="modal" id="preorder" aria-labelledby="po-title">
+  <div class="modal__inner">
+    <div class="modal__head">
+      <div>
+        <p class="eyebrow">Pre-order</p>
+        <h2 class="modal__title" id="po-title" tabindex="-1">Pre-order</h2>
+      </div>
+      <button class="icon-btn" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <form class="po-form" id="po-form" novalidate>
+      <ul class="po-items" id="po-items"></ul>
+      <div class="po-total"><span>Estimated total</span><span id="po-total">₹ 0.00</span></div>
+      <p class="po-note">Pre-ordering reserves bottles from our next batch. No payment is taken now. We'll contact you to confirm before your order ships.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="po-name">Name</label>
+          <input class="input" id="po-name" type="text" autocomplete="name" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="po-email">Email</label>
+          <input class="input" id="po-email" type="email" autocomplete="email" inputmode="email" spellcheck="false" maxlength="120">
+        </div>
+        <div class="field span-2">
+          <label for="po-phone">Phone <span class="opt">(optional)</span></label>
+          <input class="input" id="po-phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+        </div>
+      </div>
+      <p class="form-alert" id="po-alert" role="alert" hidden></p>
+      <button class="btn" id="po-submit" type="submit">Reserve 1 bottle</button>
+    </form>
+    <div class="form-success" id="po-success" hidden>
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="24" cy="24" r="21"/><path d="m15 24.5 6 6 12-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3 id="po-success-title" tabindex="-1">Pre-order reserved</h3>
+      <p id="po-success-text"></p>
+      <button class="btn btn--auto" type="button" data-close>Done</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ------------------------------------------------------------------
+   PRODUCT PHOTOS
+   focus: which part of the photo stays in view when it is cropped to
+   the square card. "50% 50%" is the centre; a bigger second number
+   moves the crop further down the photo.
+------------------------------------------------------------------- */
+const PHOTOS = {
+  lycheeStudio:   { src: "assets/products/lychee-rose-studio.jpg",    focus: "50% 61%" },
+  lycheePoolside: { src: "assets/products/lychee-rose-poolside.webp", focus: "50% 61%" },
+  lycheePour:     { src: "assets/products/lychee-rose-pour.webp",     focus: "50% 42%" },
+  passion:        { src: "assets/products/passion-fruit.webp",        focus: "50% 55%" },
+  passionWindow:  { src: "assets/products/passion-fruit-window.webp", focus: "50% 50%" },
+  passionPour:    { src: "assets/products/passion-fruit-pour.webp",   focus: "50% 50%" },
+  mixedBerries:   { src: "assets/products/mixed-berries.jpg",         focus: "50% 66%" },
+  guavaChilli:    { src: "assets/products/guava-chilli.webp",         focus: "50% 65%" },
+  guavaPour:      { src: "assets/products/guava-chilli-pour.webp",    focus: "50% 63%" },
+  kalaKhatta:     { src: "assets/products/kala-khatta.jpg",           focus: "50% 66%" },
+  masalaShikanji: { src: "assets/products/masala-shikanji.jpg",       focus: "50% 67%" },
+};
+
+/* ------------------------------------------------------------------
+   PRODUCT DATA — edit here. Every card and product page renders from this.
+   price:       e.g. 60 → "₹ 60.00"  | null → "₹ [PRICE].00"
+   makes:       e.g. 16 → "MAKES 16 MOCKTAILS" | null → "[XX]"
+   stock:       0 → "Sold out" badge + disabled Add to cart
+   preorder:    false hides the Pre-order button (shown by default)
+   description: optional product-page copy (falls back to DEFAULT_DESCRIPTION)
+   image:       main photo (Mocktail Mixers slider) | null → grey placeholder
+   gridImage:   optional main photo for the Fruity & Floral / Desi Twist
+                grid, so the same shot isn't shown twice on the page
+   hoverImage:  optional photo that fades in when a mouse hovers the card
+------------------------------------------------------------------- */
+const PRODUCTS = {
+  "lychee-rose":     { name: "Lychee Rose Mocktail Mixer",     id: "PRD-LYCHEE-ROSE",     group: "Fruity & Floral", price: 60, makes: null, stock: 1,
+                       image: PHOTOS.lycheeStudio, gridImage: PHOTOS.lycheePoolside, hoverImage: PHOTOS.lycheePour },
+  "passion-fruit":   { name: "Passion Fruit Mocktail Mixer",   id: "PRD-PASSION-FRUIT",   group: "Fruity & Floral", price: 60, makes: null, stock: 1,
+                       image: PHOTOS.passion, gridImage: PHOTOS.passionWindow, hoverImage: PHOTOS.passionPour },
+  "mixed-berries":   { name: "Mixed Berries Mocktail Mixer",   id: "PRD-MIXED-BERRIES",   group: "Fruity & Floral", price: 60, makes: null, stock: 1,
+                       image: PHOTOS.mixedBerries },
+  "guava-chilli":    { name: "Guava Chilli Mocktail Mixer",    id: "PRD-GUAVA-CHILLI",    group: "Desi Twist",      price: 60, makes: null, stock: 1,
+                       image: PHOTOS.guavaChilli, hoverImage: PHOTOS.guavaPour },
+  "kala-khatta":     { name: "Kala Khatta Mocktail Mixer",     id: "PRD-KALA-KHATTA",     group: "Desi Twist",      price: 60, makes: null, stock: 1,
+                       image: PHOTOS.kalaKhatta },
+  "masala-shikanji": { name: "Masala Shikanji Mocktail Mixer", id: "PRD-MASALA-SHIKANJI", group: "Desi Twist",      price: 60, makes: null, stock: 1,
+                       image: PHOTOS.masalaShikanji },
+};
+
+/* ------------------------------------------------------------------
+   STORE SETTINGS
+------------------------------------------------------------------- */
+const MAX_PER_FLAVOUR = 10;   // most bottles of one flavour per cart line or pre-order
+const PREVIEW_LATENCY = 600;  // ms; stand-in wait for accounts and checkout until a real backend answers
+const DEFAULT_DESCRIPTION = "Natural mocktail syrup in a 30 ml bottle. Just mix, sip, enjoy.";
+const HOW_TO_MIX = "Pour over ice, top up with chilled water and stir.";
+const GROUP_ANCHORS = { "Fruity & Floral": "fruity-floral", "Desi Twist": "desi-twist" };
+const BASE_TITLE = "Mix Up Mocktails";
+
+/* ------------------------------------------------------------------
+   HELPERS
+------------------------------------------------------------------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtPrice = p => p == null ? "₹ [PRICE].00" : "₹ " + Number(p).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const clampQty = n => Math.min(MAX_PER_FLAVOUR, Math.max(1, Math.round(Number(n)) || 1));
+const shortName = p => p.name.replace(/ Mocktail Mixer$/, "");
+const makesLine = p => `Makes ${p.makes ?? "[XX]"} mocktails`;
+const gallery = p => [...new Set([p.image, p.gridImage, p.hoverImage].filter(Boolean))];
+const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+const fmtDate = iso => {
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+};
+const itemsText = items => Array.isArray(items)
+  ? items.map(i => `${Number(i && i.qty) || 0} × ${String((i && (i.name || i.slug)) || "").replace(/ Mocktail Mixer$/, "")}`).join(", ")
+  : "";
+const imgTag = (photo, cls, alt, lazy) =>
+  `<img class="${cls}" src="${esc(photo.src)}" alt="${esc(alt)}" style="object-position:${esc(photo.focus || "50% 50%")}"${lazy ? ' loading="lazy"' : ""} decoding="async">`;
+
+const ICON = {
+  check: '<svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12.5H6L5 8Z"/><path d="M9 10V6.5a3 3 0 0 1 6 0V10" stroke-linecap="round"/></svg>',
+};
+
+/* Browser storage: the cart, preview accounts and a copy of this
+   visitor's pre-orders. Reads and writes never throw. */
+const K = { cart: "mum.cart", accounts: "mum.accounts", session: "mum.session", preorders: "mum.preorders", subscribed: "mum.subscribed" };
+const local = {
+  get(key, fallback) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; }
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch {}
+  },
+};
+
+/* ------------------------------------------------------------------
+   FORM VALIDATION AND BUSY STATES
+------------------------------------------------------------------- */
+const V = {
+  name: v => v.trim() ? "" : "Enter your name.",
+  email: v => {
+    v = v.trim();
+    if (!v) return "Enter your email address.";
+    return isEmail(v) ? "" : "Enter an email address like name@example.com.";
+  },
+  password: v => v ? "" : "Enter your password.",
+  newPassword: v => v.length >= 8 ? "" : "Use at least 8 characters.",
+  message: v => {
+    v = v.trim();
+    if (!v) return "Enter a message.";
+    return v.length < 10 ? "Tell us a little more (at least 10 characters)." : "";
+  },
+  phone: v => {
+    const digits = v.replace(/[\s()-]/g, "");
+    return !digits || /^(\+?91)?[6-9]\d{9}$/.test(digits) ? "" : "Enter a 10-digit mobile number. You can add +91 in front.";
+  },
+};
+
+function fieldError(input, message) {
+  const errorId = `${input.id}-error`;
+  let el = document.getElementById(errorId);
+  const described = (input.getAttribute("aria-describedby") || "").split(" ").filter(id => id && id !== errorId);
+  if (message) {
+    if (!el) {
+      el = document.createElement("p");
+      el.className = "field__error";
+      el.id = errorId;
+      (input.closest(".field") || input.parentElement).append(el);
+    }
+    el.textContent = message;
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", [...described, errorId].join(" "));
+  } else {
+    if (el) el.remove();
+    input.removeAttribute("aria-invalid");
+    if (described.length) input.setAttribute("aria-describedby", described.join(" "));
+    else input.removeAttribute("aria-describedby");
+  }
+}
+
+// Attach a check to an input: errors appear on submit or on leaving a filled field,
+// then update live until the value is fixed.
+function rule(input, check) {
+  input._check = check;
+  input.addEventListener("input", () => {
+    if (input.getAttribute("aria-invalid") === "true") fieldError(input, check(input.value));
+  });
+  input.addEventListener("blur", () => {
+    if (input.value) fieldError(input, check(input.value));
+  });
+}
+
+function validateAll(inputs) {
+  let first = null;
+  for (const input of inputs) {
+    const message = input._check ? input._check(input.value) : "";
+    fieldError(input, message);
+    if (message && !first) first = input;
+  }
+  if (first) first.focus();
+  return !first;
+}
+
+function setBusy(btn, busy, text) {
+  if (busy) {
+    btn._idleHTML = btn.innerHTML;
+    btn._idleLabel = btn.getAttribute("aria-label");
+    const spinner = '<span class="spinner" aria-hidden="true"></span>';
+    if (btn.classList.contains("icon-btn")) {
+      btn.innerHTML = spinner;
+      btn.setAttribute("aria-label", text);
+    } else {
+      btn.innerHTML = spinner + esc(text);
+    }
+    btn.setAttribute("aria-busy", "true");
+  } else if (btn._idleHTML != null) {
+    btn.innerHTML = btn._idleHTML;
+    if (btn._idleLabel != null) btn.setAttribute("aria-label", btn._idleLabel);
+    btn._idleHTML = null;
+    btn.removeAttribute("aria-busy");
+  }
+}
+const isBusy = btn => btn.getAttribute("aria-busy") === "true";
+
+/* ------------------------------------------------------------------
+   ACCOUNTS — preview only. Profiles (name and email) are kept in this
+   browser and passwords are never stored or checked. Replace signUp,
+   logIn and logOut with calls to your store's customer-account API
+   when the site goes live.
+------------------------------------------------------------------- */
+const Accounts = {
+  current() {
+    const session = local.get(K.session, null);
+    const all = local.get(K.accounts, {}) || {};
+    return session && all[session.email] ? all[session.email] : null;
+  },
+  async signUp({ name, email }) {
+    await wait(PREVIEW_LATENCY);
+    const key = email.toLowerCase();
+    const all = local.get(K.accounts, {}) || {};
+    if (all[key]) throw { field: "email", message: "An account with this email already exists. Log in instead." };
+    all[key] = { name, email: key, createdAt: new Date().toISOString() };
+    if (!local.set(K.accounts, all) || !local.set(K.session, { email: key })) {
+      throw { message: "Your browser blocked saving the account. Allow site data for this page and try again." };
+    }
+    return all[key];
+  },
+  async logIn({ email }) {
+    await wait(PREVIEW_LATENCY);
+    const key = email.toLowerCase();
+    const all = local.get(K.accounts, {}) || {};
+    if (!all[key]) throw { field: "email", message: "We couldn't find an account with that email. Check it, or sign up." };
+    if (!local.set(K.session, { email: key })) {
+      throw { message: "Your browser blocked logging in. Allow site data for this page and try again." };
+    }
+    return all[key];
+  },
+  logOut() { local.remove(K.session); },
+};
+
+/* ------------------------------------------------------------------
+   CHECKOUT — connect your payment provider (Shopify, Razorpay…) here.
+   Until then it reports that checkout isn't available and the cart
+   offers a pre-order instead.
+------------------------------------------------------------------- */
+const SHOPIFY_STORE = "https://at7hrx-hb.myshopify.com";
+const SHOPIFY_VARIANTS = {
+  "lychee-rose": 67600859169134,
+  "passion-fruit": 67600861331822,
+  "mixed-berries": 67600861462894,
+  "guava-chilli": 67600861495662,
+  "kala-khatta": 67600861626734,
+  "masala-shikanji": 67600861725038,
+};
+const Checkout = {
+  // Sends the cart to Shopify's own checkout (payments are handled there, e.g. by Razorpay)
+  async start(lines) {
+    const items = lines.filter(l => SHOPIFY_VARIANTS[l.slug]).map(l => `${SHOPIFY_VARIANTS[l.slug]}:${l.qty}`);
+    if (!items.length) throw { code: "checkout_unavailable" };
+    window.location.href = `${SHOPIFY_STORE}/cart/${items.join(",")}`;
+    await wait(8000); // still here means the browser blocked the redirect
+    throw { code: "checkout_unavailable" };
+  },
+};
+
+/* ------------------------------------------------------------------
+   SUBMISSIONS — pre-orders, feedback and email sign-ups are saved to
+   this page's own database. Each visitor writes only their own record;
+   only the owner can read them all (Footer → Store Inbox).
+------------------------------------------------------------------- */
+const Submissions = {
+  queue: Promise.resolve(),
+  _services: null,
+  services() {
+    if (!this._services) {
+      this._services = (async () => {
+        if (!window.claude || typeof window.claude.use !== "function") return null;
+        const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+        if (!db || !user) return null;
+        const uid = await user.id();
+        return uid ? { db, user, uid } : null;
+      })().catch(() => null);
+    }
+    return this._services;
+  },
+  add(collection, entry) {
+    const run = async () => {
+      const svc = await this.services();
+      if (!svc) throw { code: "no_service" };
+      const ref = svc.db.doc(`${collection}/${svc.uid}`);
+      const attempt = async () => {
+        const snap = await ref.get();
+        const body = snap.exists ? snap.data() : null;
+        const entries = body && Array.isArray(body.entries) ? body.entries.slice() : [];
+        entries.push(entry);
+        await ref.set({ entries, updatedAt: entry.at });
+      };
+      try {
+        await attempt();
+      } catch (err) {
+        if (!err || err.code !== "unavailable") throw err;
+        await wait(400 + Math.random() * 600);
+        await attempt();
+      }
+    };
+    const result = this.queue.then(run, run);
+    this.queue = result.catch(() => {});
+    return result;
+  },
+  async list(collection) {
+    const svc = await this.services();
+    if (!svc) throw { code: "no_service" };
+    const snap = await svc.db.collection(collection).get();
+    return snap.docs
+      .flatMap(doc => {
+        const body = doc.data();
+        return body && Array.isArray(body.entries) ? body.entries : [];
+      })
+      .filter(entry => entry && typeof entry === "object")
+      .sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  },
+  errorText(err, thing) {
+    switch (err && err.code) {
+      case "no_service":
+        return `Sending isn't available in this view of the site, so your ${thing} wasn't sent.`;
+      case "invalid_argument":
+        return `Your access to this preview doesn't allow sending, so your ${thing} wasn't sent. Ask the site owner for Contributor access.`;
+      case "quota_exceeded":
+        return `Our inbox is full, so your ${thing} wasn't sent. Please try again later.`;
+      case "resource_exhausted":
+        return "Too many requests at once. Wait a moment, then try again.";
+      default:
+        return `Something went wrong and your ${thing} wasn't sent. Please try again.`;
+    }
+  },
+};
+
+/* ------------------------------------------------------------------
+   PRODUCT CARDS
+------------------------------------------------------------------- */
+function cardHTML(slug, where) {
+  const p = PRODUCTS[slug];
+  const soldOut = p.stock === 0;
+  const lead = (where === "grid" && p.gridImage) || p.image;
+  const lazy = where !== "slider";
+  const url = `#product-${slug}`;
+  const media = lead
+    ? imgTag(lead, "card__img", p.name, lazy) +
+      (p.hoverImage ? imgTag(p.hoverImage, "card__img card__img--hover", "", true) : "")
+    : `<div class="ph"><span class="ph__id">${p.id}</span><span>1200 × 1200 px</span></div>`;
+  return `
+    <article class="card" data-slug="${slug}">
+      <a class="card__media" href="${url}" tabindex="-1" aria-hidden="true">
+        ${media}
+        ${soldOut ? '<span class="badge">Sold out</span>' : ""}
+      </a>
+      <div class="card__info">
+        <h3 class="card__title"><a href="${url}">${esc(p.name)}</a></h3>
+        <p class="card__sub">${makesLine(p)}</p>
+        <p class="card__price">${fmtPrice(p.price)}</p>
+        <div class="card__actions">
+          <button class="btn" type="button" data-add="${slug}"${soldOut ? " disabled" : ""}>${soldOut ? "Sold out" : "Add to cart"}<span class="visually-hidden">: ${esc(p.name)}</span></button>
+          ${p.preorder !== false ? `<button class="btn btn--outline" type="button" data-preorder="${slug}">Pre-order<span class="visually-hidden">: ${esc(p.name)}</span></button>` : ""}
+        </div>
+      </div>
+    </article>`;
+}
+
+function qtyHTML({ id, value, what, visibleLabel = false, small = false, cartSlug = "" }) {
+  const fk = key => cartSlug ? ` data-fk="${key}-${cartSlug}"` : "";
+  const label = what.charAt(0).toUpperCase() + what.slice(1);
+  return `
+    <div class="qty${small ? " qty--small" : ""}">
+      <button type="button" data-step="-1" aria-label="Decrease ${esc(what)}"${value <= 1 ? " disabled" : ""}${fk("dec")}>&minus;</button>
+      <input id="${id}" type="number" inputmode="numeric" min="1" max="${MAX_PER_FLAVOUR}" value="${value}"${visibleLabel ? "" : ` aria-label="${esc(label)}"`}${cartSlug ? ` data-cart-qty="${cartSlug}"` : ""}${fk("in")}>
+      <button type="button" data-step="1" aria-label="Increase ${esc(what)}"${value >= MAX_PER_FLAVOUR ? " disabled" : ""}${fk("inc")}>+</button>
+    </div>`;
+}
+
+function syncQty(input) {
+  const wrap = input.parentElement;
+  wrap.querySelector('[data-step="-1"]').disabled = Number(input.value) <= 1;
+  wrap.querySelector('[data-step="1"]').disabled = Number(input.value) >= MAX_PER_FLAVOUR;
+}
+
+function stepQty(btn) {
+  const input = btn.parentElement.querySelector("input");
+  const next = clampQty(Number(input.value) + Number(btn.dataset.step));
+  if (String(next) === input.value) return;
+  input.value = next;
+  syncQty(input);
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+/* ------------------------------------------------------------------
+   CART
+------------------------------------------------------------------- */
+const Cart = {
+  lines: [],
+  load() {
+    const raw = local.get(K.cart, []);
+    this.lines = Array.isArray(raw)
+      ? raw.filter(l => l && PRODUCTS[l.slug]).map(l => ({ slug: l.slug, qty: clampQty(l.qty) }))
+      : [];
+  },
+  save() {
+    local.set(K.cart, this.lines);
+    renderCart();
+  },
+  count() { return this.lines.reduce((n, l) => n + l.qty, 0); },
+  subtotal() { return this.lines.reduce((sum, l) => sum + (PRODUCTS[l.slug].price || 0) * l.qty, 0); },
+  // Returns true when the flavour hit the per-flavour limit
+  add(slug, qty) {
+    const line = this.lines.find(l => l.slug === slug);
+    const wanted = (line ? line.qty : 0) + qty;
+    if (line) line.qty = clampQty(wanted);
+    else this.lines.push({ slug, qty: clampQty(wanted) });
+    this.save();
+    return wanted > MAX_PER_FLAVOUR;
+  },
+  setQty(slug, qty) {
+    const line = this.lines.find(l => l.slug === slug);
+    if (!line) return;
+    line.qty = clampQty(qty);
+    this.save();
+  },
+  remove(slug) {
+    this.lines = this.lines.filter(l => l.slug !== slug);
+    this.save();
+  },
+  clear() {
+    this.lines = [];
+    this.save();
+  },
+};
+
+function lineHTML({ slug, qty }) {
+  const p = PRODUCTS[slug];
+  const url = `#product-${slug}`;
+  return `
+    <li class="cart-line">
+      <a class="cart-line__img" href="${url}" tabindex="-1" aria-hidden="true">${p.image ? imgTag(p.image, "", "", false) : ""}</a>
+      <div>
+        <a class="cart-line__name" href="${url}">${esc(p.name)}</a>
+        <p class="cart-line__unit">${fmtPrice(p.price)} each</p>
+        <div class="cart-line__controls">
+          ${qtyHTML({ id: `cart-qty-${slug}`, value: qty, what: `quantity of ${shortName(p)}`, small: true, cartSlug: slug })}
+          <button class="link-btn" type="button" data-remove="${slug}" data-fk="rm-${slug}">Remove<span class="visually-hidden"> ${esc(p.name)}</span></button>
+        </div>
+      </div>
+      <p class="cart-line__total">${fmtPrice((p.price || 0) * qty)}</p>
+    </li>`;
+}
+
+function renderCart() {
+  const count = Cart.count();
+  const badge = $("#cart-count");
+  badge.textContent = count > 99 ? "99+" : String(count);
+  badge.hidden = count === 0;
+  $("#cart-open").setAttribute("aria-label", count ? `Cart, ${plural(count, "item")}` : "Cart, empty");
+  $("#cart-title-count").textContent = count ? `(${count})` : "";
+
+  // Re-rendering replaces the controls, so put focus back where it was
+  const focusKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.fk : null;
+  if (!Cart.lines.length) {
+    $("#cart-body").innerHTML = `
+      <div class="cart-empty">
+        ${ICON.bag}
+        <p class="cart-empty__title">Your cart is empty</p>
+        <p>Add a mixer or two and they'll show up here.</p>
+        <a class="btn btn--auto" href="#mocktail-mixers">Shop mocktail mixers</a>
+      </div>`;
+    $("#cart-foot").hidden = true;
+  } else {
+    $("#cart-body").innerHTML = `<ul class="cart-lines">${Cart.lines.map(lineHTML).join("")}</ul>`;
+    $("#cart-subtotal").textContent = fmtPrice(Cart.subtotal());
+    $("#cart-foot").hidden = false;
+  }
+  if (focusKey) {
+    const target = document.querySelector(`[data-fk="${focusKey}"]`);
+    if (target && !target.disabled) target.focus();
+    else document.querySelector(`[data-fk="in-${focusKey.slice(focusKey.indexOf("-") + 1)}"]`)?.focus();
+  }
+}
+
+function announceCart(text) {
+  const el = $("#cart-notice");
+  el.textContent = "";
+  requestAnimationFrame(() => { el.textContent = text; });
+}
+
+function openCart(opener) {
+  $("#checkout-msg").hidden = true;
+  openDialog($("#cart"), opener);
+}
+
+function addToCart(btn) {
+  const slug = btn.dataset.add;
+  const qty = btn.dataset.qtyFrom ? clampQty($("#" + btn.dataset.qtyFrom).value) : 1;
+  const capped = Cart.add(slug, qty);
+  if (!btn._restHTML) btn._restHTML = btn.innerHTML;
+  clearTimeout(btn._flash);
+  btn.innerHTML = `${ICON.check}Added`;
+  btn._flash = setTimeout(() => { btn.innerHTML = btn._restHTML; btn._restHTML = null; }, 1600);
+  openCart(btn);
+  announceCart(capped
+    ? `You can have up to ${MAX_PER_FLAVOUR} bottles of each flavour in your cart.`
+    : `Added ${plural(qty, "bottle")} of ${shortName(PRODUCTS[slug])} to your cart.`);
+}
+
+function removeLine(slug) {
+  const name = shortName(PRODUCTS[slug]);
+  Cart.remove(slug);
+  announceCart(`Removed ${name} from your cart.`);
+  $("#cart-title").focus();
+}
+
+async function startCheckout() {
+  const btn = $("#checkout-btn");
+  const msg = $("#checkout-msg");
+  if (isBusy(btn) || !Cart.lines.length) return;
+  msg.hidden = true;
+  setBusy(btn, true, "Checking out…");
+  try {
+    await Checkout.start(Cart.lines);
+  } catch {
+    msg.hidden = false;
+  } finally {
+    setBusy(btn, false);
+  }
+}
+
+/* ------------------------------------------------------------------
+   DIALOGS (menu, cart, pre-order)
+------------------------------------------------------------------- */
+function openDialog(dialog, opener = document.activeElement) {
+  for (const other of $$("dialog[open]")) if (other !== dialog) other.close();
+  if (!dialog.open) {
+    dialog._opener = opener;
+    dialog.showModal();
+  }
+}
+
+function initDialogs() {
+  for (const dialog of $$("dialog")) {
+    // A click on the dimmed backdrop lands on the dialog element itself
+    dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => {
+      const opener = dialog._opener;
+      dialog._opener = null;
+      if (opener && opener.isConnected && !$("dialog[open]")) opener.focus({ preventScroll: true });
+    });
+  }
+  document.addEventListener("click", e => {
+    const closer = e.target.closest("[data-close]");
+    if (closer) closer.closest("dialog")?.close();
+  });
+  $("#menu-open").addEventListener("click", e => openDialog($("#menu"), e.currentTarget));
+  $("#cart-open").addEventListener("click", e => openCart(e.currentTarget));
+  $("#cart").addEventListener("close", () => {
+    $("#cart-notice").textContent = "";
+    $("#checkout-msg").hidden = true;
+  });
+  $("#checkout-btn").addEventListener("click", startCheckout);
+}
+
+/* ------------------------------------------------------------------
+   PRE-ORDER
+------------------------------------------------------------------- */
+const Preorder = {
+  lines: [],
+  fromCart: false,
+  single: true,
+  open(lines, { fromCart = false, opener } = {}) {
+    this.lines = lines.map(l => ({ slug: l.slug, qty: clampQty(l.qty) }));
+    this.fromCart = fromCart;
+    this.single = !fromCart && this.lines.length === 1;
+    $("#po-title").textContent = this.single ? `Pre-order ${shortName(PRODUCTS[this.lines[0].slug])}` : "Pre-order your cart";
+    $("#po-items").innerHTML = this.lines.map(l => this.itemHTML(l)).join("");
+    $("#po-form").hidden = false;
+    $("#po-success").hidden = true;
+    $("#po-alert").hidden = true;
+    for (const input of $$("#po-form .input")) fieldError(input, "");
+    prefillContact();
+    this.updateTotals();
+    openDialog($("#preorder"), opener);
+    $("#po-title").focus();
+  },
+  itemHTML({ slug, qty }) {
+    const p = PRODUCTS[slug];
+    const img = p.image ? imgTag(p.image, "", "", false) : "";
+    if (this.single) {
+      return `
+        <li class="po-item">
+          ${img}
+          <div><p class="po-item__name">${esc(p.name)}</p><p class="po-item__meta">${fmtPrice(p.price)} each</p></div>
+          ${qtyHTML({ id: "po-qty", value: qty, what: "bottles to pre-order" })}
+        </li>`;
+    }
+    return `
+      <li class="po-item">
+        ${img}
+        <div><p class="po-item__name">${esc(p.name)}</p><p class="po-item__meta">${qty} × ${fmtPrice(p.price)}</p></div>
+        <p class="po-item__total">${fmtPrice((p.price || 0) * qty)}</p>
+      </li>`;
+  },
+  updateTotals() {
+    if (this.single) this.lines[0].qty = clampQty($("#po-qty").value);
+    const bottles = this.lines.reduce((n, l) => n + l.qty, 0);
+    $("#po-total").textContent = fmtPrice(this.lines.reduce((sum, l) => sum + (PRODUCTS[l.slug].price || 0) * l.qty, 0));
+    if (!isBusy($("#po-submit"))) $("#po-submit").textContent = `Reserve ${plural(bottles, "bottle")}`;
+  },
+  async submit(e) {
+    e.preventDefault();
+    const btn = $("#po-submit");
+    const alert = $("#po-alert");
+    if (isBusy(btn)) return;
+    const name = $("#po-name"), email = $("#po-email"), phone = $("#po-phone");
+    if (!validateAll([name, email, phone])) return;
+    this.updateTotals();
+    const items = this.lines.map(l => ({ slug: l.slug, name: PRODUCTS[l.slug].name, qty: l.qty, price: PRODUCTS[l.slug].price }));
+    const entry = {
+      at: new Date().toISOString(),
+      name: name.value.trim(),
+      email: email.value.trim().toLowerCase(),
+      phone: phone.value.trim(),
+      items,
+      total: items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0),
+    };
+    alert.hidden = true;
+    setBusy(btn, true, "Reserving…");
+    try {
+      await Submissions.add("preorders", entry);
+    } catch (err) {
+      setBusy(btn, false);
+      alert.textContent = Submissions.errorText(err, "pre-order");
+      alert.hidden = false;
+      btn.focus();
+      return;
+    }
+    setBusy(btn, false);
+    const saved = local.get(K.preorders, []);
+    local.set(K.preorders, [...(Array.isArray(saved) ? saved : []), entry]);
+    if (this.fromCart) Cart.clear();
+    const bottles = items.reduce((n, i) => n + i.qty, 0);
+    const what = items.length === 1
+      ? `${plural(bottles, "bottle")} of ${items[0].name}`
+      : `${plural(bottles, "bottle")} across ${items.length} flavours`;
+    $("#po-success-text").textContent =
+      `${what} reserved for ${entry.name}. We'll contact you at ${entry.email} to confirm before your order ships. No payment has been taken.`;
+    $("#po-form").hidden = true;
+    $("#po-success").hidden = false;
+    $("#po-success-title").focus();
+    if (currentView === "account") renderAccount(location.hash.slice(1));
+  },
+};
+
+function initPreorder() {
+  rule($("#po-name"), V.name);
+  rule($("#po-email"), V.email);
+  rule($("#po-phone"), V.phone);
+  $("#po-form").addEventListener("submit", e => Preorder.submit(e));
+  $("#cart-preorder").addEventListener("click", () => {
+    Preorder.open(Cart.lines, { fromCart: true, opener: $("#cart-open") });
+  });
+}
+
+function prefillContact() {
+  const acct = Accounts.current();
+  if (!acct) return;
+  for (const [sel, value] of [["#fb-name", acct.name], ["#fb-email", acct.email], ["#po-name", acct.name], ["#po-email", acct.email]]) {
+    const input = $(sel);
+    if (input && !input.value) input.value = value;
+  }
+}
+
+/* ------------------------------------------------------------------
+   FEEDBACK AND NEWSLETTER
+------------------------------------------------------------------- */
+function initFeedback() {
+  const form = $("#feedback-form");
+  const name = $("#fb-name"), email = $("#fb-email"), message = $("#fb-message");
+  const counter = $("#fb-message-count");
+  const stars = $("#fb-stars");
+  const starLabels = $$("label", stars);
+  const readout = $("#fb-rating-readout");
+  rule(name, V.name);
+  rule(email, V.email);
+  rule(message, V.message);
+
+  message.addEventListener("input", () => { counter.textContent = `${message.value.length} / 1000`; });
+
+  const rating = () => Number(($("input:checked", stars) || {}).value || 0);
+  const paint = n => starLabels.forEach((label, i) => label.classList.toggle("is-on", i < n));
+  stars.addEventListener("change", () => {
+    const n = rating();
+    paint(n);
+    readout.textContent = n ? `${n} out of 5` : "Not rated";
+  });
+  starLabels.forEach((label, i) => label.addEventListener("mouseenter", () => paint(i + 1)));
+  stars.addEventListener("mouseleave", () => paint(rating()));
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = $("#fb-submit");
+    const alert = $("#fb-alert");
+    if (isBusy(btn)) return;
+    if (!validateAll([name, email, message])) return;
+    const entry = {
+      at: new Date().toISOString(),
+      name: name.value.trim(),
+      email: email.value.trim().toLowerCase(),
+      type: $("#fb-type").value,
+      rating: rating() || null,
+      message: message.value.trim(),
+    };
+    alert.hidden = true;
+    setBusy(btn, true, "Sending…");
+    try {
+      await Submissions.add("feedback", entry);
+    } catch (err) {
+      setBusy(btn, false);
+      alert.textContent = Submissions.errorText(err, "feedback");
+      alert.hidden = false;
+      btn.focus();
+      return;
+    }
+    setBusy(btn, false);
+    $("#fb-success-text").textContent = `Thanks, ${entry.name}. Your feedback is with our team.`;
+    form.hidden = true;
+    $("#fb-success").hidden = false;
+    $("#fb-success-title").focus();
+  });
+
+  $("#fb-again").addEventListener("click", () => {
+    message.value = "";
+    counter.textContent = "0 / 1000";
+    const checked = $("input:checked", stars);
+    if (checked) checked.checked = false;
+    paint(0);
+    readout.textContent = "Not rated";
+    $("#fb-type").selectedIndex = 0;
+    $("#fb-success").hidden = true;
+    form.hidden = false;
+    message.focus();
+  });
+}
+
+function initNewsletter() {
+  const form = $("#newsletter"), input = $("#newsletter-email"), msg = $("#newsletter-msg"), btn = $("#newsletter-submit");
+  const say = (text, isError = false) => {
+    msg.textContent = text;
+    msg.classList.toggle("is-error", isError);
+  };
+  input.addEventListener("input", () => {
+    if (input.getAttribute("aria-invalid") === "true" && !V.email(input.value)) {
+      input.removeAttribute("aria-invalid");
+      say("");
+    }
+  });
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (isBusy(btn)) return;
+    const problem = V.email(input.value);
+    if (problem) {
+      input.setAttribute("aria-invalid", "true");
+      say(problem, true);
+      input.focus();
+      return;
+    }
+    input.removeAttribute("aria-invalid");
+    const email = input.value.trim().toLowerCase();
+    const saved = local.get(K.subscribed, []);
+    const list = Array.isArray(saved) ? saved : [];
+    if (list.includes(email)) { say("You're already subscribed with this email."); return; }
+    say("");
+    setBusy(btn, true, "Subscribing");
+    try {
+      await Submissions.add("subscribers", { at: new Date().toISOString(), email });
+    } catch (err) {
+      setBusy(btn, false);
+      say(Submissions.errorText(err, "sign-up"), true);
+      return;
+    }
+    setBusy(btn, false);
+    local.set(K.subscribed, [...list, email]);
+    input.value = "";
+    say("Thanks, you're subscribed.");
+  });
+}
+
+/* ------------------------------------------------------------------
+   SEARCH
+------------------------------------------------------------------- */
+function setSearch(open) {
+  const panel = $("#search");
+  if (open === !panel.hidden) return;
+  const hadFocus = panel.contains(document.activeElement);
+  panel.hidden = !open;
+  $("#search-toggle").setAttribute("aria-expanded", String(open));
+  if (open) $("#search-input").focus();
+  else if (hadFocus) $("#search-toggle").focus();
+}
+
+function renderSearch(query) {
+  const out = $("#search-results");
+  const status = $("#search-status");
+  const q = query.trim().toLowerCase();
+  if (!q) { out.innerHTML = ""; status.textContent = ""; return; }
+  const words = q.split(/\s+/);
+  const hits = Object.entries(PRODUCTS).filter(([slug, p]) => {
+    const haystack = `${p.name} ${p.group} ${slug.replace(/-/g, " ")}`.toLowerCase();
+    return words.every(w => haystack.includes(w));
+  });
+  if (!hits.length) {
+    out.innerHTML = `<p class="search__empty">No flavours match “${esc(query.trim())}”. Try lychee, guava or berries.</p>`;
+    status.textContent = "No results";
+    return;
+  }
+  out.innerHTML = `<ul class="search__results">${hits.map(([slug, p]) => `
+    <li><a class="search__result" href="#product-${slug}">
+      ${p.image ? imgTag(p.image, "", "", false) : ""}
+      <span>${esc(p.name)}<small>${fmtPrice(p.price)}</small></span>
+    </a></li>`).join("")}</ul>`;
+  status.textContent = plural(hits.length, "result");
+}
+
+function initSearch() {
+  const input = $("#search-input");
+  $("#search-toggle").addEventListener("click", () => setSearch($("#search").hidden));
+  $("#search-close").addEventListener("click", () => setSearch(false));
+  input.addEventListener("input", () => renderSearch(input.value));
+  $("#search-form").addEventListener("submit", e => {
+    e.preventDefault();
+    const first = $("#search-results a");
+    if (first) {
+      location.hash = first.getAttribute("href");
+      setSearch(false);
+    }
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !$("#search").hidden && !$("dialog[open]")) setSearch(false);
+  });
+}
+
+/* ------------------------------------------------------------------
+   CAROUSEL: arrows, counter, mouse drag (touch uses native swipe)
+------------------------------------------------------------------- */
+const slider = $("#slider");
+const sliderStep = () => slider.children.length > 1 ? slider.children[1].offsetLeft - slider.children[0].offsetLeft : 0;
+
+function updateControls() {
+  const step = sliderStep();
+  if (!step) return; // hidden while another page shows
+  const total = slider.children.length;
+  const i = Math.round(slider.scrollLeft / step);
+  $("#slider-count").textContent = `${Math.min(i + 1, total)} / ${total}`;
+  $("#slider-prev").disabled = slider.scrollLeft <= 2;
+  $("#slider-next").disabled = slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 2;
+}
+
+function initSlider() {
+  $("#slider-prev").addEventListener("click", () => slider.scrollBy({ left: -sliderStep(), behavior: "smooth" }));
+  $("#slider-next").addEventListener("click", () => slider.scrollBy({ left: sliderStep(), behavior: "smooth" }));
+  slider.addEventListener("scroll", () => requestAnimationFrame(updateControls), { passive: true });
+  window.addEventListener("resize", updateControls);
+
+  let drag = null;
+  slider.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    drag = { x: e.clientX, left: slider.scrollLeft, moved: false };
+  });
+  window.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; slider.classList.add("is-dragging"); }
+    if (drag.moved) slider.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener("pointerup", () => {
+    if (!drag) return;
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    const step = sliderStep();
+    slider.classList.remove("is-dragging");
+    if (step) slider.scrollTo({ left: Math.round(slider.scrollLeft / step) * step, behavior: "smooth" });
+  });
+}
+
+/* ------------------------------------------------------------------
+   PRODUCT PAGE
+------------------------------------------------------------------- */
+function related(slug) {
+  const group = PRODUCTS[slug].group;
+  const others = Object.keys(PRODUCTS).filter(s => s !== slug);
+  return [...others.filter(s => PRODUCTS[s].group === group), ...others.filter(s => PRODUCTS[s].group !== group)].slice(0, 3);
+}
+
+function renderProduct(slug) {
+  const p = PRODUCTS[slug];
+  const photos = gallery(p);
+  const soldOut = p.stock === 0;
+  const main = photos[0]
+    ? imgTag(photos[0], "", p.name, false)
+    : `<div class="ph"><span class="ph__id">${p.id}</span><span>1200 × 1200 px</span></div>`;
+  const thumbs = photos.length > 1
+    ? `<div class="pdp__thumbs" role="group" aria-label="Photos of ${esc(shortName(p))}">${photos.map((photo, i) => `
+        <button class="pdp__thumb" type="button" data-photo="${i}" aria-pressed="${i === 0}" aria-label="Photo ${i + 1} of ${photos.length}">${imgTag(photo, "", "", true)}</button>`).join("")}
+      </div>`
+    : "";
+  $("#view-product").innerHTML = `
+    <div class="page-width">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="#home">Home</a><span aria-hidden="true">/</span>
+        <a href="#${GROUP_ANCHORS[p.group] || "mocktail-mixers"}">${esc(p.group)}</a><span aria-hidden="true">/</span>
+        <span aria-current="page">${esc(shortName(p))}</span>
+      </nav>
+      <div class="pdp">
+        <div class="pdp__media">
+          <div class="pdp__main">${main}${soldOut ? '<span class="badge">Sold out</span>' : ""}</div>
+          ${thumbs}
+        </div>
+        <div class="pdp__info">
+          <p class="eyebrow">${esc(p.group)}</p>
+          <h1 class="pdp__title view-title" tabindex="-1">${esc(p.name)}</h1>
+          <p class="pdp__price">${fmtPrice(p.price)}</p>
+          <p class="card__sub">${makesLine(p)} · 30 ml</p>
+          <div class="pdp__buy">
+            <div class="field">
+              <label for="pdp-qty">Quantity</label>
+              ${qtyHTML({ id: "pdp-qty", value: 1, what: "quantity", visibleLabel: true })}
+            </div>
+            <button class="btn" type="button" data-add="${slug}" data-qty-from="pdp-qty"${soldOut ? " disabled" : ""}>${soldOut ? "Sold out" : "Add to cart"}</button>
+            ${p.preorder !== false ? `
+              <button class="btn btn--outline" type="button" data-preorder="${slug}" data-qty-from="pdp-qty">Pre-order</button>
+              <p class="pdp__note">Pre-ordering reserves bottles from our next batch. No payment is taken now.</p>` : ""}
+          </div>
+          <div class="pdp__details">
+            <p>${esc(p.description || DEFAULT_DESCRIPTION)}</p>
+            <h2>How to mix</h2>
+            <p>${esc(HOW_TO_MIX)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <section class="section" aria-labelledby="more-title">
+      <div class="page-width">
+        <div class="section__head">
+          <h2 class="section__title" id="more-title">More flavours</h2>
+          <p class="section__subtitle">Mix it up</p>
+        </div>
+        <div class="grid">${related(slug).map(s => cardHTML(s, "grid")).join("")}</div>
+      </div>
+    </section>`;
+}
+
+function showPhoto(thumb) {
+  const photo = gallery(PRODUCTS[currentSlug])[Number(thumb.dataset.photo)];
+  const img = $(".pdp__main img");
+  if (!photo || !img) return;
+  img.src = photo.src;
+  img.style.objectPosition = photo.focus || "50% 50%";
+  for (const t of $$(".pdp__thumb")) t.setAttribute("aria-pressed", String(t === thumb));
+}
+
+/* ------------------------------------------------------------------
+   ACCOUNT PAGES
+------------------------------------------------------------------- */
+let accountNotice = "";
+
+function authHTML(mode, notice) {
+  const login = mode === "login";
+  const field = (id, label, type, autocomplete, hint = "") => `
+    <div class="field">
+      <label for="${id}">${label}</label>
+      <input class="input" id="${id}" type="${type}" autocomplete="${autocomplete}"${type === "email" ? ' inputmode="email" spellcheck="false"' : ""}${hint ? ` aria-describedby="${id}-hint"` : ""}>
+      ${hint ? `<p class="field__hint" id="${id}-hint">${hint}</p>` : ""}
+    </div>`;
+  return `
+    <div class="page-width">
+      <section class="auth" aria-labelledby="auth-title">
+        <div class="auth__card panel">
+          <nav class="auth__tabs" aria-label="Log in or sign up">
+            <a href="#login"${login ? ' aria-current="page"' : ""}>Log in</a>
+            <a href="#signup"${login ? "" : ' aria-current="page"'}>Sign up</a>
+          </nav>
+          <div class="auth__intro">
+            <h1 class="auth__title view-title" id="auth-title" tabindex="-1">${login ? "Welcome back" : "Create your account"}</h1>
+            <p class="muted">${login ? "Log in to see your pre-orders." : "Save your details for quicker pre-orders."}</p>
+          </div>
+          ${notice ? `<p class="notice" role="status">${esc(notice)}</p>` : ""}
+          <form class="auth__form" id="auth-form" novalidate>
+            ${login ? "" : field("auth-name", "Name", "text", "name")}
+            ${field("auth-email", "Email", "email", "email")}
+            ${field("auth-password", "Password", "password", login ? "current-password" : "new-password", login ? "" : "At least 8 characters.")}
+            <p class="form-alert" id="auth-alert" role="alert" hidden></p>
+            <button class="btn" id="auth-submit" type="submit">${login ? "Log in" : "Create account"}</button>
+          </form>
+          <p class="auth__switch">${login
+            ? 'New to Mix Up? <a href="#signup">Create an account</a>'
+            : 'Already have an account? <a href="#login">Log in</a>'}</p>
+        </div>
+        <p class="auth__note">Preview: accounts are saved on this device only.</p>
+      </section>
+    </div>`;
+}
+
+function accountHTML(acct, notice) {
+  const saved = local.get(K.preorders, []);
+  const mine = (Array.isArray(saved) ? saved : []).filter(o => o && o.email === acct.email).reverse();
+  return `
+    <div class="page-width">
+      <section class="account" aria-labelledby="account-title">
+        <p class="eyebrow">My account</p>
+        <h1 class="account__title view-title" id="account-title" tabindex="-1">Hi, ${esc(acct.name)}</h1>
+        <p class="muted">Logged in as ${esc(acct.email)}</p>
+        ${notice ? `<p class="notice" role="status">${esc(notice)}</p>` : ""}
+        <h2>Your pre-orders</h2>
+        ${mine.length
+          ? `<ul class="orders">${mine.map(o => `
+              <li class="order">
+                <strong>${esc(itemsText(o.items))}</strong>
+                <span class="muted">Reserved ${esc(fmtDate(o.at))} · ${fmtPrice(o.total)}</span>
+              </li>`).join("")}</ul>`
+          : '<p class="muted">No pre-orders yet. Pre-orders you make with this email show up here.</p>'}
+        <div class="account__actions">
+          <a class="btn btn--auto" href="#mocktail-mixers">Shop flavours</a>
+          <button class="btn btn--outline btn--auto" id="logout" type="button">Log out</button>
+        </div>
+      </section>
+    </div>`;
+}
+
+function renderAccount(hash) {
+  const view = $("#view-account");
+  const acct = Accounts.current();
+  const notice = accountNotice;
+  accountNotice = "";
+  if (acct) {
+    view.innerHTML = accountHTML(acct, notice);
+    return;
+  }
+  const mode = hash === "signup" ? "signup" : "login";
+  view.innerHTML = authHTML(mode, notice);
+  const name = $("#auth-name"), email = $("#auth-email"), password = $("#auth-password");
+  if (name) rule(name, V.name);
+  rule(email, V.email);
+  rule(password, mode === "login" ? V.password : V.newPassword);
+
+  $("#auth-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const btn = $("#auth-submit");
+    const alert = $("#auth-alert");
+    if (isBusy(btn)) return;
+    if (!validateAll([name, email, password].filter(Boolean))) return;
+    alert.hidden = true;
+    setBusy(btn, true, mode === "login" ? "Logging in…" : "Creating account…");
+    try {
+      const details = { email: email.value.trim(), password: password.value };
+      if (mode === "signup") details.name = name.value.trim();
+      await (mode === "login" ? Accounts.logIn(details) : Accounts.signUp(details));
+    } catch (err) {
+      setBusy(btn, false);
+      const input = err && err.field ? $(`#auth-${err.field}`) : null;
+      if (input) {
+        fieldError(input, err.message);
+        input.focus();
+      } else {
+        alert.textContent = (err && err.message) || "Something went wrong. Please try again.";
+        alert.hidden = false;
+        btn.focus();
+      }
+      return;
+    }
+    accountNotice = mode === "login" ? "You're logged in." : "Your account is ready.";
+    updateAccountUI();
+    if (currentView !== "account") return;
+    if (location.hash === "#account") route();
+    else location.hash = "#account";
+  });
+}
+
+function logOut() {
+  Accounts.logOut();
+  accountNotice = "You've logged out.";
+  updateAccountUI();
+  if (location.hash === "#login") route();
+  else location.hash = "#login";
+}
+
+function updateAccountUI() {
+  const acct = Accounts.current();
+  const link = $("#account-link");
+  link.setAttribute("aria-label", acct ? `My account, logged in as ${acct.name}` : "Log in or sign up");
+  link.classList.toggle("is-signed-in", Boolean(acct));
+  $("#menu-account").textContent = acct ? "My account" : "Log in / Sign up";
+  prefillContact();
+}
+
+/* ------------------------------------------------------------------
+   STORE INBOX (owner only)
+------------------------------------------------------------------- */
+function inboxHTML(preorders, feedback, signups) {
+  const table = (cols, rows, empty) => rows.length
+    ? `<div class="table-wrap"><table class="table">
+        <thead><tr>${cols.map(c => `<th scope="col">${c}</th>`).join("")}</tr></thead>
+        <tbody>${rows.join("")}</tbody>
+      </table></div>`
+    : `<p class="muted">${empty}</p>`;
+  const money = n => typeof n === "number" && isFinite(n) ? fmtPrice(n) : "–";
+  return `
+    <div class="page-width inbox">
+      <p class="eyebrow">Only you can see this page</p>
+      <h1 class="view-title" tabindex="-1">Store inbox</h1>
+      <p class="muted">Pre-orders, feedback and email sign-ups sent from this site, newest first.</p>
+      <button class="btn btn--outline btn--auto" type="button" data-inbox-refresh>Refresh</button>
+
+      <h2>Pre-orders <span class="count">${preorders.length}</span></h2>
+      ${table(["Date", "Name", "Contact", "Items", "Total"], preorders.map(o => `
+        <tr>
+          <td class="nowrap">${esc(fmtDate(o.at))}</td>
+          <td>${esc(o.name)}</td>
+          <td>${esc(o.email)}${o.phone ? `<br>${esc(o.phone)}` : ""}</td>
+          <td>${esc(itemsText(o.items))}</td>
+          <td class="nowrap num">${money(o.total)}</td>
+        </tr>`), "No pre-orders yet.")}
+
+      <h2>Feedback <span class="count">${feedback.length}</span></h2>
+      ${table(["Date", "Name", "Email", "About", "Rating", "Message"], feedback.map(f => `
+        <tr>
+          <td class="nowrap">${esc(fmtDate(f.at))}</td>
+          <td>${esc(f.name)}</td>
+          <td>${esc(f.email)}</td>
+          <td>${esc(f.type)}</td>
+          <td class="nowrap">${f.rating ? `${esc(f.rating)} / 5` : "–"}</td>
+          <td class="table__msg">${esc(f.message)}</td>
+        </tr>`), "No feedback yet.")}
+
+      <h2>Email sign-ups <span class="count">${signups.length}</span></h2>
+      ${table(["Date", "Email"], signups.map(s => `
+        <tr><td class="nowrap">${esc(fmtDate(s.at))}</td><td>${esc(s.email)}</td></tr>`), "No sign-ups yet.")}
+    </div>`;
+}
+
+async function renderInbox() {
+  const view = $("#view-inbox");
+  const show = html => {
+    const hadFocus = view.contains(document.activeElement) || document.activeElement === document.body;
+    view.innerHTML = html;
+    if (hadFocus) $(".view-title", view)?.focus({ preventScroll: true });
+  };
+  show(`
+    <div class="page-width inbox">
+      <h1 class="view-title" tabindex="-1">Store inbox</h1>
+      <p class="muted" role="status"><span class="spinner" aria-hidden="true"></span> Loading submissions…</p>
+    </div>`);
+  const svc = await Submissions.services();
+  const owner = svc ? await svc.user.isOwner() : false;
+  if (currentView !== "inbox") return;
+  if (!owner) {
+    show(`
+      <div class="page-width inbox">
+        <h1 class="view-title" tabindex="-1">Store inbox</h1>
+        <p class="muted">This page is only available to the store owner.</p>
+        <a class="btn btn--auto" href="#home">Back to the shop</a>
+      </div>`);
+    return;
+  }
+  try {
+    const [preorders, feedback, signups] = await Promise.all(["preorders", "feedback", "subscribers"].map(c => Submissions.list(c)));
+    if (currentView === "inbox") show(inboxHTML(preorders, feedback, signups));
+  } catch {
+    if (currentView !== "inbox") return;
+    show(`
+      <div class="page-width inbox">
+        <h1 class="view-title" tabindex="-1">Store inbox</h1>
+        <p class="form-alert" role="alert">We couldn't load submissions. Check your connection and try again.</p>
+        <button class="btn btn--outline btn--auto" type="button" data-inbox-refresh>Try again</button>
+      </div>`);
+  }
+}
+
+/* ------------------------------------------------------------------
+   PAGES — the address bar's #hash picks the page:
+   #product-<slug>, #account / #login / #signup, #inbox, or home
+   (optionally with a section such as #desi-twist)
+------------------------------------------------------------------- */
+let currentView = null;
+let currentSlug = null;
+let initialRoute = true;
+
+function showView(name) {
+  currentView = name;
+  for (const view of $$(".view")) view.hidden = view.id !== `view-${name}`;
+  $("#feedback").hidden = name === "inbox";
+}
+
+function titleFor(name) {
+  if (name === "product") return `${PRODUCTS[currentSlug].name} · ${BASE_TITLE}`;
+  if (name === "account") return `${Accounts.current() ? "My account" : "Log in or sign up"} · ${BASE_TITLE}`;
+  if (name === "inbox") return `Store inbox · ${BASE_TITLE}`;
+  return BASE_TITLE;
+}
+
+function route() {
+  const hash = location.hash.slice(1);
+  const initial = initialRoute;
+  initialRoute = false;
+
+  let name = "home";
+  if (hash.startsWith("product-") && PRODUCTS[hash.slice(8)]) name = "product";
+  else if (hash === "account" || hash === "login" || hash === "signup") name = "account";
+  else if (hash === "inbox") name = "inbox";
+
+  const target = name === "home" && hash ? document.getElementById(hash) : null;
+  const jumpTo = el => requestAnimationFrame(() => {
+    el.scrollIntoView({ block: "start" });
+    if (initial) return;
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+    el.focus({ preventScroll: true });
+  });
+  // The feedback form and the skip link live outside the pages: stay on the current page
+  if (target && !target.closest(".view")) {
+    if (!currentView || target.hidden) {
+      showView("home");
+      document.title = BASE_TITLE;
+      updateControls();
+    }
+    jumpTo(target);
+    return;
+  }
+
+  if (name === "product") {
+    currentSlug = hash.slice(8);
+    renderProduct(currentSlug);
+  }
+  if (name === "account") renderAccount(hash);
+  showView(name);
+  document.title = titleFor(name);
+  if (name === "inbox") renderInbox();
+  if (name === "home") updateControls();
+
+  if (target) {
+    jumpTo(target);
+    return;
+  }
+  if (initial) return;
+  window.scrollTo({ top: 0, behavior: "instant" });
+  $(`#view-${name} .view-title`)?.focus({ preventScroll: true });
+}
+
+/* ------------------------------------------------------------------
+   START
+------------------------------------------------------------------- */
+for (const el of $$("[data-products]")) {
+  const where = el.classList.contains("slider") ? "slider" : "grid";
+  el.innerHTML = el.dataset.products.split(",").map(slug => cardHTML(slug, where)).join("");
+}
+
+Cart.load();
+renderCart();
+initDialogs();
+initSearch();
+initSlider();
+initFeedback();
+initNewsletter();
+initPreorder();
+updateAccountUI();
+
+// Buttons that are drawn after load (cards, cart lines, product pages)
+document.addEventListener("click", e => {
+  const t = e.target;
+  const step = t.closest(".qty [data-step]");
+  if (step) return stepQty(step);
+  const add = t.closest("[data-add]");
+  if (add) return addToCart(add);
+  const pre = t.closest("[data-preorder]");
+  if (pre) {
+    const qty = pre.dataset.qtyFrom ? clampQty($("#" + pre.dataset.qtyFrom).value) : 1;
+    return Preorder.open([{ slug: pre.dataset.preorder, qty }], { opener: pre });
+  }
+  const remove = t.closest("[data-remove]");
+  if (remove) return removeLine(remove.dataset.remove);
+  const thumb = t.closest(".pdp__thumb");
+  if (thumb) return showPhoto(thumb);
+  if (t.closest("[data-inbox-refresh]")) return renderInbox();
+  if (t.closest("#logout")) return logOut();
+});
+
+document.addEventListener("change", e => {
+  const input = e.target.closest(".qty input");
+  if (!input) return;
+  input.value = clampQty(input.value);
+  syncQty(input);
+  if (input.dataset.cartQty) {
+    const slug = input.dataset.cartQty;
+    Cart.setQty(slug, Number(input.value));
+    announceCart(`${shortName(PRODUCTS[slug])}: ${plural(Number(input.value), "bottle")}. Subtotal ${fmtPrice(Cart.subtotal())}.`);
+  }
+  if (input.id === "po-qty") Preorder.updateTotals();
+});
+
+// In-page links: close any open drawer, and re-run the page for a link to the current address
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const dialog = a.closest("dialog");
+  if (dialog) {
+    dialog._opener = null; // the new page takes focus, not the button that opened the drawer
+    dialog.close();
+  }
+  if (a.closest("#search")) setSearch(false);
+  if (a.getAttribute("href") === location.hash) {
+    e.preventDefault();
+    route();
+  }
+});
+
+// Keep the cart and login in step with other tabs
+window.addEventListener("storage", e => {
+  if (e.key === K.cart) {
+    Cart.load();
+    renderCart();
+  }
+  if (e.key === K.session || e.key === K.accounts) {
+    updateAccountUI();
+    if (currentView === "account") renderAccount(location.hash.slice(1));
+  }
+});
+
+window.addEventListener("hashchange", route);
+route();
+
+// Show the inbox link to the store owner
+Submissions.services().then(async svc => {
+  if (svc && await svc.user.isOwner()) $("#owner-link-item").hidden = false;
+});
+</script>
